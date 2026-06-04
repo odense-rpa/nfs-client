@@ -44,10 +44,12 @@ class NFSClient:
         self._page.wait_for_timeout(5000)
         return self._page
 
-    def luk_side(self):
-        pass
+    def close(self) -> None: 
+        self._context.close()
+        self._browser.close()
+        self._playwright.stop()
 
-    def hent_bruger(self):
+    def fremsøg_bruger(self):
         pass
 
     def slet_bruger(self):
