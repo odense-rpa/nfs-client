@@ -2,7 +2,7 @@ def nav():
     pass
 
 
-class NSFSelectors:
+class NFSSelectors:
     """Selector constants used by the Playwright client."""
 
     # tilpasning
@@ -24,8 +24,11 @@ class NSFSelectors:
     BRUGER_RÆKKE = "#muniUsers_UserGridView1_dgGrid > tbody > tr"
 
     # email kolonne i listen over brugere
-    EMAIL_KOLONNE = "#td:nth-child(2)"
+    EMAIL_KOLONNE = "td:nth-child(2)"
 
+    # rolle kolonne i listen over brugere
+    ROLLE_KOLONNE = "td:nth-child(3)"
+    
     # detaljer for bruger
     DETALJER_FOR_BRUGER = "#muniUsers_UserGridView1_dgGrid > tbody > tr:nth-child(2) > td:nth-child(5) > a"
     #"a:has-text('Detaljer')"

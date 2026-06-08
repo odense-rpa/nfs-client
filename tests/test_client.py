@@ -1,12 +1,14 @@
+import pytest
+
 def test_login(nfs_client):
     nfs_client.login()
     breakpoint = ""
 
 
-def test_fremsøg_bruger(nfs_client, email=""):
+def test_fremsøg_bruger(nfs_client):
     nfs_client.login()
-    nfs_client.fremsøg_bruger(email)
-    #Fejler for nu grundet email og søg, men der bliver navigeret over til 'kommunens brugere' korrekt
+    test_email = "marsn@odense.dk"
+    nfs_client.fremsøg_bruger(test_email)
 
 
 def test_close(nfs_client):
