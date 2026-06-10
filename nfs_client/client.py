@@ -1,3 +1,4 @@
+import time
 import httpx
 from nfs_client.selectors import NFSSelectors
 
@@ -70,8 +71,21 @@ class NFSClient:
 
         return None
 
+    def _wait_for_selector_in_frame(self, frame: Frame, selector: str, timeout: int = 60000) -> Frame | None:
+        deadline = time.time() + timeout / 1000.0
+        while time.time() < deadline:
+            target_frame = self._find_frame_with_selector(frame, selector)
+            if target_frame is not None:
+                try:
+                    target_frame.locator(selector).wait_for(state="visible", timeout=1000)
+                    return target_frame
+                except PlaywrightError:
+                    pass
+            time.sleep(0.25)
+        return None
 
-    def fremsøg_bruger(self, email: str | None = None):
+
+    def fremsøg_bruger(self, email: str | None = None, click_details: bool = True):
         self._ensure_browser()
 
         if self._page is None:
@@ -81,38 +95,33 @@ class NFSClient:
         if not email:
             raise ValueError("A valid email must be provided to fremsøg_bruger")
 
-        #Navigering
+        # Navigering
         self._page.hover(NFSSelectors.TILPASNING)
         self._page.click(NFSSelectors.KOMMUNENS_BRUGERE)
 
-        #Håndtering af iframe
-        self._page.wait_for_selector("iframe#frameset", timeout=30000)
-        frameset_frame = self._page.frame(name="frameset")
-        if frameset_frame is None:
-            raise RuntimeError("iframe#frameset not found")
+        # Håndtering af iframe
+        self._page.wait_for_selector("iframe#frameset", timeout=60000)
+        frameset_locator = self._page.frame_locator("iframe#frameset")
+        frame_content_locator = frameset_locator.frame_locator("#frameContent")
 
-        frameset_frame.wait_for_load_state("domcontentloaded", timeout=30000)
+        frame_content_locator.locator("form#Form1").wait_for(state="visible", timeout=60000)
 
-        target_frame = self._find_frame_with_selector(
-            frameset_frame, NFSSelectors.EMAIL_SØGEFELT
-        )
-        if target_frame is None:
-            raise RuntimeError(
-                f"Could not find selector {NFSSelectors.EMAIL_SØGEFELT} inside iframe#frameset"
-            )
+        email_field = frame_content_locator.locator(NFSSelectors.EMAIL_SØGEFELT)
+        email_field.wait_for(state="visible", timeout=60000)
 
-        email_field = target_frame.locator(NFSSelectors.EMAIL_SØGEFELT)
-        email_field.wait_for(timeout=30000)
-
-        #Søgning
+        # Søgning
         email_field.fill(email)
-        target_frame.locator(NFSSelectors.EMAIL_SØGEKNAP).click()
+        frame_content_locator.locator(NFSSelectors.EMAIL_SØGEKNAP).click()
 
         # Vent på at resultater er klar i iframe-rammen
-        rows = target_frame.locator(NFSSelectors.BRUGER_RÆKKE)
-        rows.first.wait_for(state="visible")
+        results_table = frame_content_locator.locator(NFSSelectors.LISTE_OVER_BRUGERE)
+        results_table.wait_for(state="visible", timeout=60000)
+
+        result_row = results_table.locator(f"tbody > tr:has-text('{email}')")
+        result_row.first.wait_for(state="visible", timeout=60000)
 
         target_email = email.lower()
+        rows = results_table.locator("tbody > tr")
         count = rows.count()
 
         matched_rows = []
@@ -130,10 +139,12 @@ class NFSClient:
 
             matched_rows.append(row)
 
-        # Hvis match fundet, klik på detaljer
+        # Hvis match fundet, returner resultat eller klik på detaljer
         if len(matched_rows) == 1:
-            matched_rows[0].locator("td:nth-child(5) a").click()
-            return self._page
+            if click_details:
+                matched_rows[0].locator(NFSSelectors.DETALJER_FOR_BRUGER).click()
+                return self._page
+            return matched_rows[0]
         if len(matched_rows) == 0:
             raise ValueError(f"Ingen bruger fundet med email: {email}")
 
@@ -146,4 +157,22 @@ class NFSClient:
         if bruger_side is None:
             raise ValueError(f"Bruger med email {email} kunne ikke findes for sletning")
         
-        # TODO: Sletnings logik
+
+        self._page.wait_for_selector("iframe#frameset", timeout=30000)
+        frameset_frame = self._page.frame(name="frameset")
+        if frameset_frame is None:
+            raise RuntimeError("iframe#frameset not found")
+
+        frameset_frame.wait_for_load_state("domcontentloaded", timeout=30000)
+
+        delete_btn = frameset_frame.locator(NFSSelectors.SLET_BRUGER_KNAP)
+        delete_btn.wait_for(timeout=30000)
+
+        with self._page.expect_dialog() as dialog_info:
+            delete_btn.click()
+
+        dialog = dialog_info.value
+        dialog.accept()
+
+        # TODO: verify the user was deleted or wait for the expected post-delete state
+        self._page.wait_for_load_state("networkidle", timeout=30000)

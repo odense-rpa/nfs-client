@@ -30,7 +30,7 @@ class NFSSelectors:
     ROLLE_KOLONNE = "td:nth-child(3)"
     
     # detaljer for bruger
-    DETALJER_FOR_BRUGER = "#muniUsers_UserGridView1_dgGrid > tbody > tr:nth-child(2) > td:nth-child(5) > a"
+    DETALJER_FOR_BRUGER = "td:nth-child(5) a"
     #"a:has-text('Detaljer')"
 
     DETALJER_FOR_BRUGERE = DETALJER_FOR_BRUGER
