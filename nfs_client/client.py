@@ -95,31 +95,31 @@ class NFSClient:
         if not email:
             raise ValueError("A valid email must be provided to fremsøg_bruger")
 
-        # Navigering
+        # navigering
         self._page.hover(NFSSelectors.TILPASNING)
         self._page.click(NFSSelectors.KOMMUNENS_BRUGERE)
 
-        # Håndtering af iframe
-        self._page.wait_for_selector("iframe#frameset", timeout=60000)
-        frameset_locator = self._page.frame_locator("iframe#frameset")
-        frame_content_locator = frameset_locator.frame_locator("#frameContent")
+        # håndtering af iframe
+        self._page.wait_for_selector(NFSSelectors.IFRAME, timeout=60000)
+        frameset_locator = self._page.frame_locator(NFSSelectors.IFRAME)
+        frame_content_locator = frameset_locator.frame_locator(NFSSelectors.IFRAME_CONTENT)
+        frame_content_locator.locator(NFSSelectors.FORM).wait_for(state="visible", timeout=60000)
 
-        frame_content_locator.locator("form#Form1").wait_for(state="visible", timeout=60000)
-
+        # vent på email_søgefelt selector
         email_field = frame_content_locator.locator(NFSSelectors.EMAIL_SØGEFELT)
         email_field.wait_for(state="visible", timeout=60000)
-
-        # Søgning
+        
+        # søgning
         email_field.fill(email)
         frame_content_locator.locator(NFSSelectors.EMAIL_SØGEKNAP).click()
 
-        # Vent på at resultater er klar i iframe-rammen
+        # vent på at resultater er klar i iframe-rammen
         results_table = frame_content_locator.locator(NFSSelectors.LISTE_OVER_BRUGERE)
         results_table.wait_for(state="visible", timeout=60000)
-
         result_row = results_table.locator(f"tbody > tr:has-text('{email}')")
         result_row.first.wait_for(state="visible", timeout=60000)
 
+        # match email med resultat
         target_email = email.lower()
         rows = results_table.locator("tbody > tr")
         count = rows.count()
@@ -158,21 +158,29 @@ class NFSClient:
             raise ValueError(f"Bruger med email {email} kunne ikke findes for sletning")
         
 
-        self._page.wait_for_selector("iframe#frameset", timeout=30000)
+        # håndtering af iframe
+        self._page.wait_for_selector(NFSSelectors.IFRAME, timeout=30000)
         frameset_frame = self._page.frame(name="frameset")
         if frameset_frame is None:
             raise RuntimeError("iframe#frameset not found")
 
         frameset_frame.wait_for_load_state("domcontentloaded", timeout=30000)
 
+
+        # vent på slet knap 
         delete_btn = frameset_frame.locator(NFSSelectors.SLET_BRUGER_KNAP)
         delete_btn.wait_for(timeout=30000)
 
+
+        # slet klik
         with self._page.expect_dialog() as dialog_info:
             delete_btn.click()
 
+
+        # håndter fail-safe
         dialog = dialog_info.value
         dialog.accept()
+        self._page.wait_for_load_state("networkidle", timeout=30000)
 
         # TODO: verify the user was deleted or wait for the expected post-delete state
-        self._page.wait_for_load_state("networkidle", timeout=30000)
+        # TODO: navigate back to frontpage, so the process can start over
