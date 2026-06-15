@@ -11,3 +11,8 @@ def nfs_client():
         username=os.getenv("USERNAME", ""),
         password=os.getenv("PASSWORD", ""),
     )
+
+
+@pytest.fixture
+def test_mail():
+    return os.getenv("TEST_EMAIL")

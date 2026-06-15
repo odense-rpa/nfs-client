@@ -52,7 +52,7 @@ class NFSClient:
         self._browser.close()
         self._playwright.stop()
 
-    def fremsøg_bruger(self, email: str | None = None, click_details: bool = True):
+    def _søg_bruger(self, email: str):
         self._ensure_browser()
 
         if self._page is None:
@@ -89,6 +89,10 @@ class NFSClient:
         results_table.wait_for(state="visible", timeout=60000)
         result_row = results_table.locator(f"tbody > tr:has-text('{email}')")
         result_row.first.wait_for(state="visible", timeout=60000)
+        return results_table
+
+    def naviger_til_bruger(self, email: str):
+        results_table = self._søg_bruger(email)
 
         # match email med resultat
         target_email = email.lower()
@@ -111,9 +115,7 @@ class NFSClient:
 
         # Hvis match fundet, returner resultat eller klik på detaljer
         if len(matched_rows) == 1:
-            if click_details:
-                matched_rows[0].locator(NFSSelectors.DETALJER_FOR_BRUGER).click()
-                return self._page
+            matched_rows[0].locator(NFSSelectors.DETALJER_FOR_BRUGER).click()
             return matched_rows[0]
         if len(matched_rows) == 0:
             raise ValueError(f"Ingen bruger fundet med email: {email}")
@@ -121,7 +123,7 @@ class NFSClient:
         raise ValueError(f"Flere brugere fundet med email: {email}")
 
     def slet_bruger(self, email: str):
-        bruger_side = self.fremsøg_bruger(email)
+        bruger_side = self.naviger_til_bruger(email)
 
         if bruger_side is None:
             raise ValueError(f"Bruger med email {email} kunne ikke findes for sletning")
@@ -158,7 +160,6 @@ class NFSClient:
 
         try:
             expect(result_locator).to_have_count(0, timeout=15000)
-            return True
 
         except PlaywrightError:
             raise RuntimeError(f"Bruger med email {email} blev ikke slettet korrekt")
