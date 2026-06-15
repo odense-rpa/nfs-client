@@ -9,5 +9,5 @@ def nfs_client():
     return NFSClient(
         base_url=os.getenv("BASE_URL", "about:blank"),
         username=os.getenv("USERNAME", ""),
-        password=os.getenv("PASSWORD", "")
+        password=os.getenv("PASSWORD", ""),
     )

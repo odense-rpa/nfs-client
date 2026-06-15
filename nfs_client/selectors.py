@@ -5,10 +5,9 @@ def nav():
 class NFSSelectors:
     """Selector constants used by the Playwright client."""
 
-
     # ----------------------------------- iframe & nested content --------------------------------
-    
-    # iframe 
+
+    # iframe
     IFRAME = "iframe#frameset"
 
     # iframe content
@@ -16,7 +15,6 @@ class NFSSelectors:
 
     # form inde i iframe
     FORM = "form#Form1"
-
 
     # --------------------------------------- Navigering -----------------------------------------
 
@@ -29,7 +27,6 @@ class NFSSelectors:
     # detaljer for bruger
     DETALJER_FOR_BRUGER = "td:nth-child(5) a"
 
-
     # -------------------------------- Email søgning og resultat ---------------------------------
 
     # email søgefelt
@@ -41,8 +38,13 @@ class NFSSelectors:
     # liste over brugere
     LISTE_OVER_BRUGERE = "#muniUsers_UserGridView1_dgGrid"
 
-    # række i listen over brugere
+    # generel bruger række i listen over brugere
     BRUGER_RÆKKE = "#muniUsers_UserGridView1_dgGrid > tbody > tr"
+
+    # specifik bruger række i liste over brugere - bruges til at tjekke om bruger er slettet
+    RESULTAT_I_LISTE_OVER_BRUGER = (
+        "#muniUsers_UserGridView1_dgGrid > tbody > tr:nth-child(2)"
+    )
 
     # email kolonne i listen over brugere
     EMAIL_KOLONNE = "td:nth-child(2)"
@@ -50,11 +52,7 @@ class NFSSelectors:
     # rolle kolonne i listen over brugere
     ROLLE_KOLONNE = "td:nth-child(3)"
 
-    
     # ------------------------------------------ Slet --------------------------------------------
 
     # slet bruger knap
     SLET_BRUGER_KNAP = "#EditUserSettings2_btnDelete"
-
-    #ok knap ved sletning
-    #I really dont know...

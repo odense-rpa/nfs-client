@@ -1,14 +1,13 @@
-import time
 import httpx
 from nfs_client.selectors import NFSSelectors
-
 from playwright.sync_api import (
+    expect,
     sync_playwright,
     Playwright,
     Page,
-    Frame,
     Error as PlaywrightError,
 )
+
 
 class NFSClient:
     def __init__(self, base_url: str, username: str, password: str, email: str = ""):
@@ -20,7 +19,6 @@ class NFSClient:
         self._browser = None
         self._context = None
         self._page: Page | None = None
-
 
     def _ensure_browser(self) -> None:
         if self._page is not None:
@@ -39,7 +37,6 @@ class NFSClient:
             self._context.pages[0] if self._context.pages else self._context.new_page()
         )
 
-
     def login(self):
         self._ensure_browser()
         if self._page is None:
@@ -50,40 +47,10 @@ class NFSClient:
         self._page.wait_for_timeout(5000)
         return self._page
 
-
-    def close(self) -> None: 
+    def close(self) -> None:
         self._context.close()
         self._browser.close()
         self._playwright.stop()
-
-
-    def _find_frame_with_selector(self, frame: Frame, selector: str) -> Frame | None:
-        try:
-            if frame.locator(selector).count() > 0:
-                return frame
-        except PlaywrightError:
-            pass
-
-        for child in frame.child_frames:
-            found = self._find_frame_with_selector(child, selector)
-            if found is not None:
-                return found
-
-        return None
-
-    def _wait_for_selector_in_frame(self, frame: Frame, selector: str, timeout: int = 60000) -> Frame | None:
-        deadline = time.time() + timeout / 1000.0
-        while time.time() < deadline:
-            target_frame = self._find_frame_with_selector(frame, selector)
-            if target_frame is not None:
-                try:
-                    target_frame.locator(selector).wait_for(state="visible", timeout=1000)
-                    return target_frame
-                except PlaywrightError:
-                    pass
-            time.sleep(0.25)
-        return None
-
 
     def fremsøg_bruger(self, email: str | None = None, click_details: bool = True):
         self._ensure_browser()
@@ -102,13 +69,17 @@ class NFSClient:
         # håndtering af iframe
         self._page.wait_for_selector(NFSSelectors.IFRAME, timeout=60000)
         frameset_locator = self._page.frame_locator(NFSSelectors.IFRAME)
-        frame_content_locator = frameset_locator.frame_locator(NFSSelectors.IFRAME_CONTENT)
-        frame_content_locator.locator(NFSSelectors.FORM).wait_for(state="visible", timeout=60000)
+        frame_content_locator = frameset_locator.frame_locator(
+            NFSSelectors.IFRAME_CONTENT
+        )
+        frame_content_locator.locator(NFSSelectors.FORM).wait_for(
+            state="visible", timeout=60000
+        )
 
         # vent på email_søgefelt selector
         email_field = frame_content_locator.locator(NFSSelectors.EMAIL_SØGEFELT)
         email_field.wait_for(state="visible", timeout=60000)
-        
+
         # søgning
         email_field.fill(email)
         frame_content_locator.locator(NFSSelectors.EMAIL_SØGEKNAP).click()
@@ -123,7 +94,6 @@ class NFSClient:
         target_email = email.lower()
         rows = results_table.locator("tbody > tr")
         count = rows.count()
-
         matched_rows = []
         for i in range(count):
             row = rows.nth(i)
@@ -150,37 +120,45 @@ class NFSClient:
 
         raise ValueError(f"Flere brugere fundet med email: {email}")
 
-
     def slet_bruger(self, email: str):
         bruger_side = self.fremsøg_bruger(email)
-        
+
         if bruger_side is None:
             raise ValueError(f"Bruger med email {email} kunne ikke findes for sletning")
-        
 
         # håndtering af iframe
-        self._page.wait_for_selector(NFSSelectors.IFRAME, timeout=30000)
-        frameset_frame = self._page.frame(name="frameset")
-        if frameset_frame is None:
-            raise RuntimeError("iframe#frameset not found")
+        self._page.wait_for_selector(NFSSelectors.IFRAME, timeout=60000)
+        frameset_locator = self._page.frame_locator(NFSSelectors.IFRAME)
+        frame_content_locator = frameset_locator.frame_locator(
+            NFSSelectors.IFRAME_CONTENT
+        )
 
-        frameset_frame.wait_for_load_state("domcontentloaded", timeout=30000)
+        frame_content_locator.locator(NFSSelectors.FORM).wait_for(
+            state="visible", timeout=60000
+        )
 
+        delete_btn = frame_content_locator.locator(NFSSelectors.SLET_BRUGER_KNAP)
+        delete_btn.wait_for(state="visible", timeout=60000)
 
-        # vent på slet knap 
-        delete_btn = frameset_frame.locator(NFSSelectors.SLET_BRUGER_KNAP)
-        delete_btn.wait_for(timeout=30000)
+        # håndter fail-safe & slet klik
+        for frame in self._page.frames:
+            frame.evaluate("window.confirm = () => true")
 
+        delete_btn.click()
 
-        # slet klik
-        with self._page.expect_dialog() as dialog_info:
-            delete_btn.click()
+        # Genstart søgningen for at validere, at brugeren virkelig er væk
+        search_field = frame_content_locator.locator(NFSSelectors.EMAIL_SØGEFELT)
+        search_field.wait_for(state="visible", timeout=60000)
+        search_field.fill(email)
+        frame_content_locator.locator(NFSSelectors.EMAIL_SØGEKNAP).click()
 
+        result_locator = frame_content_locator.locator(
+            NFSSelectors.RESULTAT_I_LISTE_OVER_BRUGER
+        )
 
-        # håndter fail-safe
-        dialog = dialog_info.value
-        dialog.accept()
-        self._page.wait_for_load_state("networkidle", timeout=30000)
+        try:
+            expect(result_locator).to_have_count(0, timeout=15000)
+            return True
 
-        # TODO: verify the user was deleted or wait for the expected post-delete state
-        # TODO: navigate back to frontpage, so the process can start over
+        except PlaywrightError:
+            raise RuntimeError(f"Bruger med email {email} blev ikke slettet korrekt")
