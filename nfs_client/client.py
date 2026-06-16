@@ -1,4 +1,3 @@
-import httpx
 from nfs_client.selectors import NFSSelectors
 from playwright.sync_api import (
     expect,
@@ -19,6 +18,8 @@ class NFSClient:
         self._browser = None
         self._context = None
         self._page: Page | None = None
+        
+        self._login()
 
     def _ensure_browser(self) -> None:
         if self._page is not None:
@@ -37,7 +38,7 @@ class NFSClient:
             self._context.pages[0] if self._context.pages else self._context.new_page()
         )
 
-    def login(self):
+    def _login(self):
         self._ensure_browser()
         if self._page is None:
             return None
@@ -48,9 +49,25 @@ class NFSClient:
         return self._page
 
     def close(self) -> None:
-        self._context.close()
-        self._browser.close()
-        self._playwright.stop()
+        if self._context is not None:
+            self._context.close()
+            self._context = None
+
+        if self._browser is not None:
+            self._browser.close()
+            self._browser = None
+
+        if self._playwright is not None:
+            self._playwright.stop()
+            self._playwright = None
+
+        self._page = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     def _søg_bruger(self, email: str):
         self._ensure_browser()
