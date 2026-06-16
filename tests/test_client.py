@@ -6,7 +6,6 @@ def test_søg_bruger(nfs_client, test_mail):
     except Exception as e:
         pytest.fail(f"_søg_bruger raised unexpected exception: {e}")
 
-
 def test_naviger_til_bruger(nfs_client, test_mail):    
     nfs_client._søg_bruger(test_mail)
 

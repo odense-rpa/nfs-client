@@ -27,6 +27,9 @@ class NFSSelectors:
     # detaljer for bruger
     DETALJER_FOR_BRUGER = "td:nth-child(5) a"
 
+    # icon/billede link til forside
+    FORSIDE_LINK = "#IMG1"
+
     # -------------------------------- Email søgning og resultat ---------------------------------
 
     # email søgefelt

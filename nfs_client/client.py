@@ -183,3 +183,6 @@ class NFSClient:
 
         except PlaywrightError:
             raise RuntimeError(f"Bruger med email {email} blev ikke slettet korrekt")
+        
+        self._page.click(NFSSelectors.FORSIDE_LINK)
+        self._page.wait_for_timeout(5000)
