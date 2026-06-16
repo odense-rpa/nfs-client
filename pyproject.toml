@@ -1,5 +1,5 @@
 [project]
-name = "process-template"
+name = "nfs-client"
 version = "0.3.0"
 description = "Add your description here"
 readme = "README.md"
