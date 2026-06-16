@@ -105,7 +105,10 @@ class NFSClient:
         results_table = frame_content_locator.locator(NFSSelectors.LISTE_OVER_BRUGERE)
         results_table.wait_for(state="visible", timeout=60000)
         result_row = results_table.locator(f"tbody > tr:has-text('{email}')")
-        result_row.first.wait_for(state="visible", timeout=60000)
+        try:
+            result_row.first.wait_for(state="visible", timeout=60000)
+        except PlaywrightError:
+            raise ValueError(f"Ingen bruger fundet med email: {email}")
         return results_table
 
     def naviger_til_bruger(self, email: str):
