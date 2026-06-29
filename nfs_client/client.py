@@ -26,7 +26,7 @@ class NFSClient:
             return
 
         self._playwright = sync_playwright().start()
-        self._browser = self._playwright.chromium.launch(headless=False)
+        self._browser = self._playwright.chromium.launch(headless=True)
         self._context = self._browser.new_context(
             viewport={"width": 1920, "height": 1080},
             accept_downloads=False,
