@@ -9,11 +9,19 @@ from playwright.sync_api import (
 
 
 class NFSClient:
-    def __init__(self, base_url: str, username: str, password: str, email: str = ""):
+    def __init__(
+        self,
+        base_url: str,
+        username: str,
+        password: str,
+        email: str = "",
+        headless: bool | None = None,
+    ):
         self.base_url = base_url or "about:blank"
         self.username = username or ""
         self.password = password or ""
         self.email = email or ""
+        self.headless = True if headless is None else headless
         self._playwright: Playwright | None = None
         self._browser = None
         self._context = None
@@ -26,7 +34,7 @@ class NFSClient:
             return
 
         self._playwright = sync_playwright().start()
-        self._browser = self._playwright.chromium.launch(headless=True)
+        self._browser = self._playwright.chromium.launch(headless=self.headless)
         self._context = self._browser.new_context(
             viewport={"width": 1920, "height": 1080},
             accept_downloads=False,
