@@ -174,6 +174,10 @@ class NFSClient:
         for frame in self._page.frames:
             frame.evaluate("window.confirm = () => true")
 
+        def _handle_delete_dialog(dialog):
+            dialog.accept()
+
+        self._page.on("dialog", _handle_delete_dialog)
         delete_btn.click()
 
         # Genstart søgningen for at validere, at brugeren virkelig er væk
