@@ -10,6 +10,7 @@ def nfs_client():
         base_url=os.getenv("BASE_URL", "about:blank"),
         username=os.getenv("USERNAME", ""),
         password=os.getenv("PASSWORD", ""),
+        headless=False
     )
 
 

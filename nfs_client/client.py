@@ -170,15 +170,39 @@ class NFSClient:
         delete_btn = frame_content_locator.locator(NFSSelectors.SLET_BRUGER_KNAP)
         delete_btn.wait_for(state="visible", timeout=60000)
 
-        # håndter fail-safe & slet klik
-        for frame in self._page.frames:
-            frame.evaluate("window.confirm = () => true")
+        # Workflow: 1) første popup accepteres altid, 2) anden popup (advarsel) accepteres
+        # og dens besked rejses som ValueError.
+        dialog_messages: list[str] = []
 
-        def _handle_delete_dialog(dialog):
+        def _capture_delete_dialog(dialog):
+            dialog_messages.append(dialog.message)
             dialog.accept()
 
-        self._page.on("dialog", _handle_delete_dialog)
-        delete_btn.click()
+        self._page.on("dialog", _capture_delete_dialog)
+        try:
+            delete_btn.click()
+
+            # Første popup forventes altid.
+            for _ in range(70):
+                if dialog_messages:
+                    break
+                self._page.wait_for_timeout(100)
+
+            if not dialog_messages:
+                raise RuntimeError(
+                    "Forventet bekræftelsesdialog ved sletning blev ikke vist"
+                )
+
+            # Anden popup vises kun ved advarselsscenariet (typisk forsinket 3-5 sek.).
+            for _ in range(60):
+                if len(dialog_messages) >= 2:
+                    break
+                self._page.wait_for_timeout(100)
+
+            if len(dialog_messages) >= 2:
+                raise ValueError(dialog_messages[1])
+        finally:
+            self._page.remove_listener("dialog", _capture_delete_dialog)
 
         # Genstart søgningen for at validere, at brugeren virkelig er væk
         search_field = frame_content_locator.locator(NFSSelectors.EMAIL_SØGEFELT)
