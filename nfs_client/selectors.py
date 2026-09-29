@@ -1,7 +1,3 @@
-def nav():
-    pass
-
-
 class NFSSelectors:
     """Selector constants used by the Playwright client."""
 
@@ -59,3 +55,26 @@ class NFSSelectors:
 
     # slet bruger knap
     SLET_BRUGER_KNAP = "#EditUserSettings2_btnDelete"
+
+
+class SagerSelectors:
+    """Selectors til "Søg sager" (Authority/CaseArchive.aspx), fra Blue Prism objektet
+    "Netforvaltning Sundhed (Chrome)"."""
+
+    # side med sagssøgning // case search page
+    SAGSARKIV_STI = "/Authority/CaseArchive.aspx"
+
+    # cpr søgefelt
+    CPR = "#tbCpr"
+
+    # sagsbehandler - "- Alle -" vælges, så alle sager på borgeren findes
+    # // caseworker - "- Alle -" is selected so all of the citizen's cases are found
+    SAGSBEHANDLER = "#ddlCaseworker"
+    ALLE_SAGSBEHANDLERE = "- Alle -"
+
+    # søgeknap
+    SOEG = "#btnCaseSearch"
+
+    # resultattabel og tom-række // result table and empty row
+    SAGSTABEL = "table#gvCaseList"
+    INGEN_SAGER = "tr#trEmpty"
