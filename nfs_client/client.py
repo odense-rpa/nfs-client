@@ -1,5 +1,7 @@
 """Samlet indgang til NFS // Single entry point to NFS."""
 
+from playwright.sync_api import Playwright
+
 from nfs_client.brugere import BrugerClient
 from nfs_client.sager import SagerClient
 from nfs_client.session import NFSSession
@@ -21,8 +23,9 @@ class NFSClient:
         password: str,
         email: str = "",
         headless: bool | None = None,
+        playwright: Playwright | None = None,
     ):
-        self.session = NFSSession(base_url, username, password, headless)
+        self.session = NFSSession(base_url, username, password, headless, playwright)
         self.brugere = BrugerClient(self.session, email)
         self.sager = SagerClient(self.session)
 

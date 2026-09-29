@@ -50,6 +50,24 @@ with NFSClient(
 - `naviger_til_bruger(email)` — gå til brugerens detaljeside
 - `slet_bruger(email)` — slet brugeren og verificér at den er væk
 
+### Flere browserklienter i samme proces
+
+Playwrights sync-API tillader kun én instans pr. tråd. Skal NFSClient køre sammen med
+andre Playwright-baserede klienter (fx oes-client), så start én instans og giv den til
+dem alle. Hver klient får stadig sin egen browser, sit eget vindue og sit eget login.
+Den delte instans stoppes ikke, når klienten lukkes; det gør `with`-blokken.
+
+```python
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as pw:
+    with NFSClient(base_url, username, password, playwright=pw) as nfs, \
+         OESClient(anden_url, username, password, playwright=pw) as oes:
+        ...
+```
+
+Uden `playwright` (standard) starter og stopper klienten sin egen instans som hidtil.
+
 ## Arkitektur
 
 - `NFSSession` (`session.py`) ejer browseren og login.
@@ -61,6 +79,12 @@ with NFSClient(
 Nyt område: opret `nfs_client/<omraade>.py` med `class XClient: def __init__(self, session)`,
 læg selectors i `selectors.py`, tilføj `self.<omraade> = XClient(self.session)` i `NFSClient`, og
 skriv `tests/test_<omraade>.py` med `nfs`-fixturen.
+
+## Ændringer i 0.5.0
+
+- `NFSClient(..., playwright=pw)` tager en valgfri, delt Playwright-instans, så
+  flere browserklienter kan køre i samme proces. Uden den opfører klienten sig
+  som før. Ingen brud på API'et.
 
 ## Ændringer i 0.4.0
 

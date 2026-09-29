@@ -1,6 +1,6 @@
 [project]
 name = "nfs-client"
-version = "0.4.0"
+version = "0.5.0"
 description = "Playwright-klient til Netforvaltning Sundhed (NFS)"
 readme = "README.md"
 requires-python = ">=3.13"

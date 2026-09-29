@@ -15,12 +15,18 @@ class NFSSession:
         username: str,
         password: str,
         headless: bool | None = None,
+        playwright: Playwright | None = None,
     ):
+        """playwright: en delt Playwright-instans. Er den None, starter sessionen sin
+        egen og stopper den igen ved close(). En delt instans stoppes aldrig her.
+        // a shared Playwright instance. If None, the session starts and stops its own.
+        """
         self.base_url = base_url or "about:blank"
         self.username = username or ""
         self.password = password or ""
         self.headless = True if headless is None else headless
-        self._playwright: Playwright | None = None
+        self._playwright: Playwright | None = playwright
+        self._ejer_playwright = playwright is None
         self._browser = None
         self._context: BrowserContext | None = None
         self._page: Page | None = None
@@ -49,7 +55,8 @@ class NFSSession:
         if self._page is not None:
             return
 
-        self._playwright = sync_playwright().start()
+        if self._playwright is None:
+            self._playwright = sync_playwright().start()
         self._browser = self._playwright.chromium.launch(headless=self.headless)
         self._context = self._browser.new_context(
             viewport={"width": 1920, "height": 1080},
@@ -76,7 +83,9 @@ class NFSSession:
             self._browser.close()
             self._browser = None
 
-        if self._playwright is not None:
+        # en delt Playwright-instans ejes af kalderen og stoppes ikke her
+        # // a shared Playwright instance is owned by the caller and not stopped here
+        if self._playwright is not None and self._ejer_playwright:
             self._playwright.stop()
             self._playwright = None
 
