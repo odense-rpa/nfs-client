@@ -37,3 +37,7 @@ Thumbs.db
 
 # Local working files 
 tmp/
+
+# Blue Prism-objekt og Windows-download-markør
+*.bpobject
+*:Zone.Identifier

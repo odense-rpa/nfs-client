@@ -3,8 +3,6 @@
 NFSSession ejer browseren og login, som områdeklienterne (sager, brugere) deler.
 """
 
-from urllib.parse import urljoin
-
 from playwright.sync_api import BrowserContext, Page, Playwright, sync_playwright
 
 
@@ -68,11 +66,6 @@ class NFSSession:
         self._ensure_browser()
         self.page.goto(self.base_url, wait_until="domcontentloaded")
         self.page.wait_for_timeout(5000)
-
-    def gaa_til(self, sti: str) -> Page:
-        """Går til en side i NFS, fx "/Authority/CaseArchive.aspx"."""
-        self.page.goto(urljoin(self.base_url, sti), wait_until="domcontentloaded")
-        return self.page
 
     def close(self) -> None:
         if self._context is not None:

@@ -58,11 +58,12 @@ class NFSSelectors:
 
 
 class SagerSelectors:
-    """Selectors til "Søg sager" (Authority/CaseArchive.aspx), fra Blue Prism objektet
-    "Netforvaltning Sundhed (Chrome)"."""
+    """Selectors til "Søg sager", fra Blue Prism objektet "Netforvaltning Sundhed
+    (Chrome)". Siden kan ikke åbnes med url (404), man skal klikke sig ind via menuen."""
 
-    # side med sagssøgning // case search page
-    SAGSARKIV_STI = "/Authority/CaseArchive.aspx"
+    # menu: hover "Sager" og klik "Søg sager" // menu: hover "Sager", click "Søg sager"
+    MENU_SAGER = "#Menu1_mainMenu_0"
+    MENU_SOEG_SAGER = "table#Menu1_mainMenu_9"
 
     # cpr søgefelt
     CPR = "#tbCpr"

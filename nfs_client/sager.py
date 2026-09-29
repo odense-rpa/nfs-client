@@ -8,6 +8,7 @@ import re
 import time
 from datetime import date
 
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Frame, Page, TimeoutError
 
 from nfs_client.selectors import SagerSelectors as ss
@@ -85,15 +86,34 @@ class SagerClient:
         self._session = session
 
     def _sagsside(self, timeout: float = 30_000) -> Page | Frame:
-        """Går til "Søg sager" og returnerer siden eller den frame, der har cpr-feltet."""
-        page = self._session.gaa_til(ss.SAGSARKIV_STI)
+        """Åbner "Søg sager" via menuen og returnerer siden eller framen med cpr-feltet."""
+        page = self._session.page
+        # cpr-feltet fra et tidligere kald skal være væk, før vi leder efter det nye
+        # // the cpr field from an earlier call must be gone before we look for the new
+        gamle = [
+            felt.element_handle()
+            for omraade in [page, *page.frames]
+            for felt in omraade.locator(ss.CPR).all()
+        ]
+        page.hover(ss.MENU_SAGER)
+        page.click(ss.MENU_SOEG_SAGER)
         deadline = time.monotonic() + timeout / 1000
         while time.monotonic() < deadline:
             for omraade in [page, *page.frames]:
-                if omraade.locator(ss.CPR).count() > 0:
+                if omraade.locator(ss.CPR).count() > 0 and not any(
+                    self._er_tilsluttet(gammel) for gammel in gamle
+                ):
                     return omraade
             page.wait_for_timeout(POLL_MS)
         raise TimeoutError("Cpr kom ikke frem")
+
+    @staticmethod
+    def _er_tilsluttet(element) -> bool:
+        """True hvis elementet stadig sidder i DOM'en."""
+        try:
+            return element.evaluate("e => e.isConnected")
+        except PlaywrightError:
+            return False
 
     def _vent_paa_resultat(self, omraade: Page | Frame, timeout: float) -> bool:
         """Venter på resultatet. Returnerer False hvis der ingen sager er."""

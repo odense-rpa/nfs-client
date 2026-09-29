@@ -97,3 +97,9 @@ def test_hent_sager(nfs, test_nfs_cpr):
 
 def test_hent_sager_ingen(nfs, test_nfs_cpr_uden_sager):
     assert nfs.sager.hent_sager(test_nfs_cpr_uden_sager) == []
+
+
+def test_hent_sager_to_gange(nfs, test_nfs_cpr, test_nfs_cpr_uden_sager):
+    """Søgesiden nulstilles mellem kald // the search page resets between calls."""
+    assert len(nfs.sager.hent_sager(test_nfs_cpr)) > 0
+    assert nfs.sager.hent_sager(test_nfs_cpr_uden_sager) == []
